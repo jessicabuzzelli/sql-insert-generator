@@ -31,7 +31,7 @@ def cli(infile, outfile, table, p, types):
     # click.echo('types: %s' % types)
 
     if not table:
-        table = path.basename(path.normpath(infile))
+        table = path.basename(path.normpath(path.splitext(infile)[0]))
 
     ext = infile.split(".")[-1]
 
