@@ -1,122 +1,104 @@
-import sys
 import csv
 import openpyxl
 
 
-"""
-Usage:
-    python3 sql_generator.py {f_in} {table_name (optional)} {*data_types (optional)}
-    
-Input: f_in (CSV, TXT, XLSX, or XLSM)
-    Delimiter: ,
-    Quote character: "
-    - If Excel, will use the first ("active") sheet
+def load_csv(f, out, table_name, data_types, p):
+    try:
+        csv_file = open(f, 'r')
+        csv_file.close()
+    except FileNotFoundError:
+        return 'File not found. ' \
+               'Make sure to include the full file path if file is not in current active directory.'
 
-Data type options:
-    "str" --> varchar2(35)
-    "strX" --> varchar2(X); X::int
-    "int" --> number(22,0)
-    "intX" --> number(X, 0); X::int
-    "float" --> number(22,2)
-    
-Output: {f_in}.sql
-    create table {table_name} (col1 col1_datatype, ...);
-    INSERT INTO {table_name} (col1, ...) VALUES (val1, ...);
-    ...
-"""
-
-
-def main(f, table_name, data_types):
-    ext = f.split(".")[1]
-
-    if ext == "csv" or ext == "txt":
-        load_csv(f, table_name, data_types)
-
-    elif ext == "xlsx" or ext == "xlsm":
-        load_excel(f, table_name, data_types)
-
-
-def load_csv(f, table_name, data_types):
     with open(f) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=",", quotechar=r'"')
+        csv_reader = csv.reader(csv_file, delimiter=",", quotechar=r'"')  # TODO - add click options
 
-        with open("{}.sql".format(f.split("/")[-1].split(".")[0]), "w") as f_out:
-            f_out.write("CREATE TABLE {} (".format(table_name))
+        cols = next(csv_reader)  # TODO - handling for inputs w/o a header row
+        col_names = ", ".join(cols)
+        vals = next(csv_reader)
 
-            cols = next(csv_reader)
-            col_names = ", ".join(cols)
+        if data_types and len(data_types) != len(cols):
+            data_types = None
+            print('Warning: Number of datatypes != number of fields. '
+                  'Data types inferred from first row of input file.')
+        elif data_types:
+            data_types = [convert_col_type(t) for t in data_types]
+        else:
+            data_types = [get_col_type(val) for val in vals]
 
-            if data_types is None:
+        if p:
+            print("CREATE TABLE {} (".format(table_name), end='')
 
-                first_vals = next(csv_reader)
+            for i in range(len(data_types) - 1):
+                print("{} {}, ".format(cols[i], data_types[i]), end='')
 
-                for i in range(len(cols) - 1):
-                    f_out.write("{} {}, ".format(cols[i], get_col_type(first_vals[i])))
+            print("{} {});".format(cols[-1], data_types[-1]))
 
-                f_out.write("{} {});\n".format(cols[-1], get_col_type(first_vals[-1])))
-
-                f_out.write(
-                    "INSERT INTO {} ({}) VALUES ({});\n".format(
-                        table_name, col_names, ", ".join(first_vals)
-                    )
-                )
-
-            else:
-                for i in range(len(data_types) - 1):
-                    f_out.write(
-                        "{} {}, ".format(cols[i], convert_col_type(data_types[i]))
-                    )
-
-                f_out.write(
-                    "{} {}); \n".format(cols[-1], convert_col_type(data_types[-1]))
-                )
+            print("INSERT INTO {} ({}) VALUES ({});".format(table_name, col_names, ", ".join(vals)))
 
             for row in csv_reader:
-                f_out.write(
-                    "INSERT INTO {} ({}) VALUES ({});\n".format(
-                        table_name, col_names, ", ".join(row)
-                    )
-                )
-
-
-def load_excel(f, table_name, data_types):
-    # Defaults to first sheet
-    wb = openpyxl.load_workbook(f)
-    ws = wb.active
-
-    with open("%s.sql" % f.split("/")[-1].split(".")[0], "w") as f_out:
-        f_out.write("CREATE TABLE {} (".format(table_name))
-
-        cols = next(ws.values)
-        col_names = ", ".join(cols)
-
-        if data_types is None:
-
-            first_vals = next(ws.values)
-
-            for i in range(len(cols) - 1):
-                f_out.write("{} {}, ".format(cols[i], get_col_type(first_vals[i])))
-
-            f_out.write("{} {});\n".format(cols[-1], get_col_type(first_vals[-1])))
-
-            f_out.write(
-                "INSERT INTO {} ({}) VALUES ({});\n".format(
-                    table_name, col_names, ", ".join(first_vals)
-                )
-            )
+                print("INSERT INTO {} ({}) VALUES ({});".format(table_name, col_names, ", ".join(row)))
 
         else:
+            with open(out, "w") as f_out:
+                f_out.write("CREATE TABLE {} (".format(table_name))
+                for i in range(len(data_types) - 1):
+                    f_out.write("{} {}, ".format(cols[i], data_types[i]))
+
+                f_out.write("{} {}); \n".format(cols[-1], data_types[-1]))
+
+                f_out.write("INSERT INTO {} ({}) VALUES ({});\n".format(table_name, col_names, ", ".join(vals)))
+
+                for row in csv_reader:
+                    f_out.write("INSERT INTO {} ({}) VALUES ({});\n".format(table_name, col_names, ", ".join(row)))
+
+
+def load_excel(f, out, table_name, data_types, p):
+    # Defaults to first sheet
+    try:
+        wb = openpyxl.load_workbook(f)
+        ws = wb.active  # TODO - add click option
+    except FileNotFoundError:
+        return 'File not found. ' \
+               'Make sure to include the full file path if file is not in current active directory.'
+
+    cols = next(ws.values)  # TODO - add option to handle input files w/o a header
+    col_names = ", ".join(cols)
+    vals = [c.value for c in ws[1]]
+
+    if data_types and len(data_types) != len(cols):
+        data_types = None
+        print('Warning: Number of datatypes != number of fields. '
+              'Data types inferred from first row of input file.')
+    elif data_types:
+        data_types = [convert_col_type(t) for t in data_types]
+    else:
+        data_types = [get_col_type(val) for val in vals]
+
+    if p:
+        print("CREATE TABLE {} (".format(table_name), end='')
+
+        for i in range(len(data_types) - 1):
+            print("{} {}, ".format(cols[i], data_types[i]), end='')
+
+        print("{} {});".format(cols[-1], data_types[-1]))
+
+        print("INSERT INTO {} ({}) VALUES ({});".format(table_name, col_names, ", ".join(vals)))
+
+        for row_cells in ws.iter_rows(min_row=3):
+            print("INSERT INTO {} ({}) VALUES ({});".format(table_name, col_names, ", ".join([str(i.value) for i in row_cells])))
+    else:
+        with open(out, "w") as f_out:
+            f_out.write("CREATE TABLE {} (".format(table_name))
             for i in range(len(data_types) - 1):
-                f_out.write("{} {}, ".format(cols[i], convert_col_type(data_types[i])))
+                f_out.write("{} {}, ".format(cols[i], data_types[i]))
 
-            f_out.write("{} {}); \n".format(cols[-1], convert_col_type(data_types[-1])))
+            f_out.write("{} {}); \n".format(cols[-1], data_types[-1]))
 
-        for row_cells in ws.iter_rows(min_row=2):
-            f_out.write(
-                "INSERT INTO {} ({}) VALUES ({});\n".format(
-                    table_name, col_names, ", ".join([str(i.value) for i in row_cells])
-                )
-            )
+            f_out.write("INSERT INTO {} ({}) VALUES ({});\n".format(table_name, col_names, ", ".join(vals)))
+
+            for row_cells in ws.iter_rows(min_row=3):
+                f_out.write("INSERT INTO {} ({}) VALUES ({});\n".format(table_name, col_names, ", ".join([str(i.value) for i in row_cells])))
 
 
 def get_col_type(val):
@@ -150,17 +132,3 @@ def convert_col_type(type_str):
     else:
         print("Datatype %s is invalid." % type_str)
         raise NameError
-
-
-if __name__ == "__main__":
-    try:
-        tn = sys.argv[2]
-    except IndexError:
-        tn = sys.argv[1].split("/")[-1][:-4]
-
-    try:
-        dt = sys.argv[3:]
-    except IndexError:
-        dt = None
-
-    main(f=sys.argv[1], table_name=tn, data_types=dt)
