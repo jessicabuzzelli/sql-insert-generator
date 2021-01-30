@@ -1,13 +1,18 @@
 ### SQL insert generator
 
+#### Requirements:
+- Poetry
+- Python3
+
 #### Usage:
-    python3 sql_generator.py {f_in} {table_name (optional)} {*data_types (optional)}
-    
+    poetry run generator {f_in} {*options}
+![poetry run generator --help](images/cli_usage.png)
+
 #### Input: f_in (CSV, TXT, XLSX, XLSM)
 - If CSV/TXT: Delimiter = `,`; quote character = `"`
 - If Excel: First ("active") sheet will be used
 
-#### Data type options:
+#### `Data type` options:
 - `str` --> `varchar2(35)`
 - `strX` --> `varchar2(X)`; `X::int`
 - `int` --> `number(22,0)`
@@ -20,3 +25,6 @@ create table {table_name} (col1 col1_datatype, ...);
 INSERT INTO {table_name} (col1, ...) VALUES (val1, ...);
 ...
 ```
+
+#### Disclaimer:
+Datatypes use Oracle SQL types. Written to easily load external data into a temp database table to compare against existing tables.
