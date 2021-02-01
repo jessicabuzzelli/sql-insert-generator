@@ -26,5 +26,10 @@ INSERT INTO {table_name} (col1, ...) VALUES (val1, ...);
 ...
 ```
 
-#### Disclaimer:
-Datatypes use Oracle SQL types. Written to easily load external data into a temp database table to compare against existing tables.
+#### Disclaimers:
+- Datatypes use Oracle SQL types. 
+- Number types default to 22 bits.
+- `sql_generator.py` only checks the first row when determining types. If this is an issue, pass your own (encoded) types with `--types`
+- Default file output is the path of the input file. Use `-outfile' parameter to redirect. 
+- An output file will not be written if the print flag `-p` is used.
+- Default table name is the name of the file with underscores replacing whitespaces.
