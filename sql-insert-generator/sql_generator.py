@@ -88,7 +88,7 @@ def load_excel(f, out, table_name, data_types, p):
 
     cols = next(ws.values)  # TODO - add option to handle input files w/o a header
     col_names = ", ".join(cols)
-    vals = [c.value for c in ws[1]]
+    vals = [c.value for c in ws[2]]
 
     if data_types and len(data_types) != len(cols):
         data_types = None
@@ -111,7 +111,7 @@ def load_excel(f, out, table_name, data_types, p):
 
         print(
             "INSERT INTO {} ({}) VALUES ({});".format(
-                table_name, col_names, ", ".join(vals)
+                table_name, col_names, ", ".join([str(x) for x in vals])
             )
         )
 
@@ -131,7 +131,7 @@ def load_excel(f, out, table_name, data_types, p):
 
             f_out.write(
                 "INSERT INTO {} ({}) VALUES ({});\n".format(
-                    table_name, col_names, ", ".join(vals)
+                    table_name, col_names, ", ".join([str(x) for x in vals])
                 )
             )
 
@@ -149,17 +149,32 @@ def get_col_type(val):
     # only checks if value can be converted to int or float, leaves as str if type conversion errors
     # only checks the first instance in each column -- will break if later VALUES are in different formats
 
-    if val.isnumeric() is True or val.strip("-").isnumeric() is True:
+    typeof = type(val)
+    assert typeof != list
+
+    if typeof == int:
         return "NUMBER(22,0)"
 
-    elif val.strip("-").strip(".").isnumeric() is True:
+    elif typeof == float:
         return "NUMBER(22,2)"
 
-    else:
-        if len(val) >= 20:
+    elif typeof == str:
+        if val[0] == '-':  # allows negatives
+            val = val[1:]
+
+        if val.isnumeric() is True:
+            return "NUMBER(22,0)"
+
+        elif val.count(".") == 1 and val.strip(".").isnumeric() is True:
+            return "NUMBER(22,2)"
+
+        elif len(val) >= 20:
             return "VARCHAR2(128)"
+
         else:
             return "VARCHAR2(35)"
+    else:
+        raise TypeError
 
 
 def convert_col_type(type_str):
