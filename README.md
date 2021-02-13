@@ -1,8 +1,9 @@
-### SQL insert generator
+### SQL Insert Generator
+For times when you wish you had received a database link instead, don't want SQLDeveloper's import wizard to freeze your remote desktop for the 1000th time, and can't be bothered to open up Excel to concat fields into SQL inserts.
 
 #### Requirements:
-- Poetry
-- Python3
+- `python3`
+- `poetry`
 
 #### Usage:
     poetry run generator {f_in} {*options}
@@ -27,9 +28,9 @@ INSERT INTO {table_name} (col1, ...) VALUES (val1, ...);
 ```
 
 #### Disclaimers:
-- Datatypes use Oracle SQL types. 
+- Datatypes use generic Oracle SQL types. 
 - Number types default to 22 bits.
 - `sql_generator.py` only checks the first row when determining types. If this is an issue, pass your own (encoded) types with `--types`
-- Default file output is the path of the input file. Use `-outfile' parameter to redirect. 
+- Default file output is the path of the input file. Use `-outfile` parameter to redirect. 
 - An output file will not be written if the print flag `-p` is used.
 - Default table name is the name of the file with underscores replacing whitespaces.
