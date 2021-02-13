@@ -1,8 +1,11 @@
 [tool.poetry]
-name = "sql-insert-generator"
+name = "sql_insert_generator"
 version = "0.1.0"
 description = "Generate SQL create table and insert row statements for a XLSX, CSV, or TXT file."
 authors = ["jessicabuzzelli"]
+packages = [
+    { include = "sql_insert_generator" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -12,7 +15,7 @@ openpyxl = "^3.0.6"
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.scripts]
-generator = "sql-insert-generator.main:cli"
+generator = "sql_insert_generator.main:cli"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,5 +1,5 @@
 import click
-from sql_generator import load_csv, load_excel
+from sql_insert_generator.sql_generator import load_csv, load_excel
 from os import path
 
 

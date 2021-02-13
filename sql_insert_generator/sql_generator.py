@@ -21,12 +21,16 @@ def load_csv(f, out, table_name, data_types, p):
         col_names = ", ".join(cols)
         vals = next(csv_reader)
 
-        if data_types and len(data_types) != len(cols):
-            data_types = None
+        if data_types is None:
+            data_types = ''
+
+        if data_types is '' or (data_types and len(data_types) != len(cols)):
             print(
                 "Warning: Number of datatypes != number of fields. "
                 "Data types inferred from first row of input file."
             )
+            data_types = [get_col_type(val) for val in vals]
+
         elif data_types:
             data_types = [convert_col_type(t) for t in data_types]
         else:
@@ -90,12 +94,17 @@ def load_excel(f, out, table_name, data_types, p):
     col_names = ", ".join(cols)
     vals = [c.value for c in ws[2]]
 
-    if data_types and len(data_types) != len(cols):
-        data_types = None
+    if data_types is None:
+        data_types = ''
+
+    if data_types is '' or (data_types and len(data_types) != len(cols)):
         print(
             "Warning: Number of datatypes != number of fields. "
             "Data types inferred from first row of input file."
         )
+
+        data_types = [get_col_type(val) for val in vals]
+
     elif data_types:
         data_types = [convert_col_type(t) for t in data_types]
     else:
